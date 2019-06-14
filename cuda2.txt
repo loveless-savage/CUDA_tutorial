@@ -2,18 +2,17 @@ Okay, so now we know how to talk to the GPU at all. What about parallelization? 
 
 ~~~~~~~~~~HARDWARE SEPARATION~~~~~~~~~~
 
-There are so many cores in a GPU that they are grouped on the hardware level into STREAMING MULTIPROCESSORS (SM's). These are like suburbs, with each house as a single processing core.
-These houses sit in groups of 32, like neighborhood blocks. These hardware groupings of cores are called WARPS. All cores in a warp run threads simultaneously, and they all share memory and local clocks. When a core is given a task, all its neighbors in the warp run idly unless they are given tasks as well. This affects our decision of thread count later.
+There are so many cores in a GPU that they are grouped on the hardware level into STREAMING MULTIPROCESSORS (SM's). These are like suburbs, where each house represents a single processing core (see cuda3.png). There are 1-30 SM's per GPU.
+The metaphorical houses sit in groups of 32, like neighborhood blocks. These hardware groupings of cores are called WARPS. All cores in a warp run threads simultaneously, and they all share memory and local clocks. When a core is given a task, all its neighbors in the warp run idly unless they are given tasks as well. This affects our decision of thread count later.
 
 ~~~~~~~~~~SOFTWARE SEPARATION~~~~~~~~~~
 
 When we parallelize our kernel, we split the task into copies of itself, called THREADS. These threads are similar to CPU threads in that one thread and one only can run on a single core, and the core will be available to new threads after the first thread is complete.
-The difference between CPU threads and CUDA threads comes mainly from the fact that CUDA threads are much simpler, but many copies run at once on the GPU. Memory and synchronization are also different, but at this point it won't affect our algorithms much.
+The difference between CPU threads and CUDA threads comes mainly from the fact that CUDA threads are much simpler tasks, but many copies run at once on the GPU. Memory and synchronization are also different, but at this point it won't affect our algorithms much.
 
 Every algorithm asks for a different number of threads, so there is no single hardware-defined group of cores that always runs a whole kernel. Instead, when we ask for multiple threads, CUDA ropes off a certain number of cores using software. All the cores used for a unique kernel execution are called the GRID.
-The grid consists of some number of cores, but warps are always allocated together. Thus the total number of threads should always be a multiple of 32.
 
-To organize further, the grid is split into several software-defined THREAD BLOCKS, often just called BLOCKS. These blocks also encompass a whole number of warps, so block size should also always be a multiple of 32. But we have the power to change what that size is, rather than block size being frozen in silicon.
+To organize further, the grid is split into several software-defined THREAD BLOCKS, often just called BLOCKS. These blocks encompass a whole number of warps, so block size should always be a multiple of 32. But we have the power to change what that size is, rather than being frozen in silicon like warp size.
 
 ~~~~~~~~~~USING THREADS AND BLOCKS~~~~~~~~~~
 
@@ -33,4 +32,4 @@ Notice that while the number of THREADS per BLOCK (YY) should always be a multip
 What if we made the number of THREADS per BLOCK (YY) something other than a multiple of 32? When the BLOCKS are set apart, they are claimed in a whole number of WARPS.
 So when we ask for 30 BLOCKS, 32 THREADS each, each BLOCK is set aside with 1 WARP each and we end up with (30*1)=30 claimed WARPS.
 In contrast, 20 BLOCKS, 48 THREADS each, should have the same number of total THREADS- 960- but each BLOCK is set aside with 2 WARPS each, with 16 idle CORES in one of the warps. In total this leads to (20*2)=40 claimed WARPS.
-40 warps is more costly for time, memory, and power than 30 warps. Thus we see that whenever possible, we must ensure that the number of THREADS per BLOCK is always divisible by 32.
+40 warps is more costly for time, memory, and power than 30 warps. Thus we see that whenever possible, we must ensure that the number of THREADS per BLOCK (YY) is always divisible by 32.

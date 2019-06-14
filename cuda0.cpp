@@ -1,14 +1,12 @@
 /*	this is the tutorial written by Andrew Jones on CUDA
  *	the end goal is to add two very large arrays of floats together into a third array.
  *	the document is a series of code snippets which progress through learning CUDA.
- *	based on the tutorial:
-https://devblogs.nvidia.com/even-easier-introduction-cuda/
- *	all changes from document to document are marked with this...*/				/*/*/	// changes between snippets look like this
+ *	all changes from document to document are marked...*/				/*/*/	// changes between snippets look like this
 
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-/*	let's start with basic C++
+/*	let's lay the groundwork for an algorithm in C++
  *	this snippet is compiled with:
 		g++ cuda0.cpp -o cuda0
 */

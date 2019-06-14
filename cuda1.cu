@@ -1,7 +1,7 @@
 /*	now let's drop some CUDA in there!
  *	instead of running all on the CPU, we will hand off the task of adding floats to the GPU
  *	for now, we'll stick with one thread
- *	compile with cuda compiler:
+ *	compile with CUDA compiler:
 		nvcc cuda1.cu -o cuda1
 */
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
