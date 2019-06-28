@@ -25,9 +25,18 @@ int main(){
 	// three arrays; we will add the first two to sum[]
 	printf("initializing arrays\n");
 	float *add1, *add2, *sum;											/*/*/	// CUDA allows us to set up a memory space
-	cudaMallocManaged( &add1, arraySize*sizeof(float) );				/*/*/	// accessible by the CPU and GPU alike
+	cudaMallocManaged( &add1, arraySize*sizeof(float) );				/*/*/	// accessible by the CPU (HOST) and GPU (DEVICE) alike
 	cudaMallocManaged( &add2, arraySize*sizeof(float) );				/*/*/	// cudaMallocManaged(), like malloc(),
 	cudaMallocManaged( &sum,  arraySize*sizeof(float) );				/*/*/	// returns pointers usable by both devices
+
+/*	All that was a lie- cudaMallocManaged() does not actually allocate memory on a RAM card accessed by both host and device
+ *	...but that is what appears to happen in the source code, so when learning the command, we talk of this imaginary memory like it is real
+ *	What is really happening? Well, when you give a kernel to the GPU, it needs a copy of the instructions and variables in local memory
+ *	...so CUDA copies everyting relevant from the host memory to the device memory.
+ *	We previously had to manage this copying manually with commands like cudaMemcpy*().
+ *	cudaMallocManaged() makes our code more concise and readable by copying for us.
+ *	Unfortunately, we will still have latency from memory transfer.
+*/
 
 	// fill first two arrays before the CUDA starts
 	for (int i=0; i<arraySize; i++){

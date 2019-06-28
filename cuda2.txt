@@ -7,12 +7,13 @@ The metaphorical houses sit in groups of 32, like neighborhood blocks. These har
 
 ~~~~~~~~~~SOFTWARE SEPARATION~~~~~~~~~~
 
-When we parallelize our kernel, we split the task into copies of itself, called THREADS. These threads are similar to CPU threads in that one thread and one only can run on a single core, and the core will be available to new threads after the first thread is complete.
+When we parallelize our kernel, we instruct the GPU to run many instances of the kernel at once, called THREADS. These threads are similar to CPU threads in that one thread and one only can run on a single core, and the core will be available to new threads once the first thread is released.
 The difference between CPU threads and CUDA threads comes mainly from the fact that CUDA threads are much simpler tasks, but many copies run at once on the GPU. Memory and synchronization are also different, but at this point it won't affect our algorithms much.
 
 Every algorithm asks for a different number of threads, so there is no single hardware-defined group of cores that always runs a whole kernel. Instead, when we ask for multiple threads, CUDA ropes off a certain number of cores using software. All the cores used for a unique kernel execution are called the GRID.
 
 To organize further, the grid is split into several software-defined THREAD BLOCKS, often just called BLOCKS. These blocks encompass a whole number of warps, so block size should always be a multiple of 32. But we have the power to change what that size is, rather than being frozen in silicon like warp size.
+Each BLOCK is also managed by an entire SM. Multiple BLOCKS can run on one SM, but one BLOCK cannot span multiple SM's. If a BLOCK asks for more threads than an SM has cores, the SM will break up the block and run portions of it concurrently. When an SM runs more threads than it has cores, in one or more blocks, we say it has a greater level of OCCUPANCY. Greater OCCUPANCY means that the SM can pipeline threads to camouflage memory transfer latency, but it means you are running fewer of your threads at once.
 
 ~~~~~~~~~~USING THREADS AND BLOCKS~~~~~~~~~~
 
@@ -33,3 +34,14 @@ What if we made the number of THREADS per BLOCK (YY) something other than a mult
 So when we ask for 30 BLOCKS, 32 THREADS each, each BLOCK is set aside with 1 WARP each and we end up with (30*1)=30 claimed WARPS.
 In contrast, 20 BLOCKS, 48 THREADS each, should have the same number of total THREADS- 960- but each BLOCK is set aside with 2 WARPS each, with 16 idle CORES in one of the warps. In total this leads to (20*2)=40 claimed WARPS.
 40 warps is more costly for time, memory, and power than 30 warps. Thus we see that whenever possible, we must ensure that the number of THREADS per BLOCK (YY) is always divisible by 32.
+
+~~~~~~~~~~OPTIMIZING BLOCK SIZE~~~~~~~~~~
+
+The immediate question that comes to mind is this: given a multiple of 32, is it better to have bigger or smaller blocks?
+Unfortunately this question has no simple answer, as there are too many factors involved in kernel execution that might affect it.
+The best way to find the optimal block size is to test. True, it is a bailout answer, but it is the most convenient and reasonable way to do it.
+
+There are sometimes hints to what the best block size should be based on your algorithm. If you know that most of your threads will take a short time, for example, but a few unidientified threads will take significantly more clock cycles, bigger blocks will not be as efficient. Every block executes its member threads simultaneously, but if only two or three threads are still unfinished, the rest of the threads will spin idly. In smaller blocks, the blocks will be able to finish at slightly different times, and those with no long threads will complete and be able to release their finished threads. This scenario often happens in deep learning, when most data in a matrix is roughly zero but there are a few places where the information will be very dense and complicated; experimenters just won't know where those places are.
+When your blocks are smaller, however, SM's frequently are assigned more threads than it has cores, and are given high OCCUPANCY. With occupancy greater than the number of cores in an SM, the SM must run some threads after others finish. Bigger block size, therefore, often means more of your threads run at once. This is not an absolute, unfortunately. With high occupancy, SM's can usually pipeline commands from multiple threads to hide latency from memory transfer. So sometimes, based on your algorithm, smaller blocks will allow you to complete your threads in fewer clock cycles.
+
+There are many other factors involved in how quickly blocks execute. It is clear that rather than trying to calculate the best block size, it is faster and more work-efficient to just test several block sizes on your GPU.
